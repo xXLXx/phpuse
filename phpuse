@@ -1,0 +1,55 @@
+#!/bin/sh
+
+mampdir=/Applications/MAMP/
+mampbin=${mampdir}bin/
+completelist=
+
+for file in ${mampbin}php/_php*
+do
+    if [ -d "$file" ]; then
+        phpname=`echo $file | cut -d / -f 6 | cut -c 5-`
+        completelist="$completelist $phpname"
+    fi
+done
+
+complete -W "$completelist" phpuse
+
+if [[ "$1" =~ ([0-9][.]?)+ ]]; then
+    if [ ! -d "${mampbin}php/_php$1" ]; then
+        echo "PHP Version doens't exist choose from: "
+        phpuse ls
+        exit
+    fi
+
+    echo "Setting PHP to version $1"
+    sed -E -i '' "s'export MAMP_PHP=${mampbin}php/php([0-9][.]?)+/bin'export MAMP_PHP=${mampbin}php/php$1/bin'g" ~/.bash_profile
+    
+    pecl config-set php_ini /Applications/MAMP/bin/php/php${1}/conf/php.ini
+    for file in ${mampbin}php/php*
+    do
+        if [ -d "$file" ]; then
+            phpname=`echo $file | cut -d / -f 6`
+            mv "$file" "${mampbin}php/_$phpname"
+        fi
+    done
+    mv "${mampbin}php/_php$1" "${mampbin}php/php$1"
+
+    phpinitial=`echo "$1" | cut  -d / -f 6 | cut -c 1`
+    phpname=`echo "$1" | cut -d / -f 6`
+    sed -E -i '' "s'php[0-9]_module[[:space:]]+${mampbin}php/php([0-9][.]?)+/modules/libphp[0-9].so'php${phpinitial}_module    ${mampbin}php/php${phpname}/modules/libphp${phpinitial}.so'g" ${mampdir}conf/apache/httpd.conf
+
+    sudo ${mampbin}stopApache.sh
+    echo "Restarting apache..."
+    sleep 3
+    sudo ${mampbin}startApache.sh
+
+
+    echo `cat ${mampdir}conf/apache/httpd.conf | grep 'LoadModule php'`
+
+    exec bash -l
+elif [[ "$1" = "ls" ]]; then
+    for phpname in $completelist; do
+        echo $phpname;
+    done
+#     echo "Missing PHP Version parameter"
+fi
