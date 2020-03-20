@@ -1,6 +1,8 @@
 # phpuse
 A PHP version toggle command for MAMP
 
+![Sample](https://image.prntscr.com/image/joX-vFFDQuGMzul1sXodJQ.png)
+
 ## Requirements
 - OSX with a bash
 - MAMP installed on your `/Applications/` folder
